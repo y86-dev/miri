@@ -38,7 +38,8 @@ install:
 - cargo --version
 
 test_script:
-- set PYTHON=C:\msys64\mingw64\bin\python3.exe
+# Add python3 path: https://www.appveyor.com/docs/windows-images-software/#python
+- set PATH=C:\Python35-x64;%PATH%
 - bash ci.sh
 
 after_test:
