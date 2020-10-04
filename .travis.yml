@@ -27,6 +27,19 @@ before_script:
   else
     RUSTC_HASH=$(cat rust-version)
   fi
+# Setting build env
+- |
+  case $TRAVIS_OS_NAME in
+    linux )
+      export RUST_OS_NAME=Linux
+      ;;
+    osx )
+      export RUST_OS_NAME=macOS
+      ;;
+    * )
+      echo "Doesn't know this OS"
+      exit 1;
+  esac
 # Install Rust. We use the "stable" toolchain for better caching, it is just used to build `rustup-toolchain-install-master`.
 # But we also need to take into account that the build cache might have a different, outdated default.
 - curl https://build.travis-ci.org/files/rustup-init.sh -sSf | sh -s -- -y --default-toolchain none --profile minimal

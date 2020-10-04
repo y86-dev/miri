@@ -18,6 +18,8 @@ branches:
   - try
 
 install:
+# Setting build env
+- set RUST_OS_NAME=Windows
 # Compute the Rust version we use.
 - set /p RUSTC_HASH=<rust-version
 # Install Rust. We use the "stable" toolchain for better caching, it is just used to build `rustup-toolchain-install-master`.
