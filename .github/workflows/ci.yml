@@ -34,6 +34,98 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
+      - name: Setting build env
+        run: |
+          echo "RUST_OS_NAME=${{ runner.os }}" >> $GITHUB_ENV
+        shell: bash
+
+      # We install gnu-tar because BSD tar is buggy on Github's macos machines.
+      # See <https://github.com/actions/cache/issues/403>.
+      - name: Install GNU tar
+        if: runner.os == 'macOS'
+        run: |
+          brew install gnu-tar
+          echo "/usr/local/opt/gnu-tar/libexec/gnubin" >> $GITHUB_PATH
+
+      # Cache the global cargo directory, but NOT the local `target` directory which
+      # we cannot reuse anyway when the nightly changes (and it grows quite large
+      # over time).
+      - name: Add cache for cargo
+        uses: actions/cache@v2
+        with:
+          path: |
+            # to avoid saving rustup proxy, save xargo and RTIM in separate dir.
+            ~/.cargo/ci
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo
+
+      # We use the "stable" toolchain for better caching, it is just used to build `rustup-toolchain-install-master`.
+      # But we also need to take into account that the build cache might have a different, outdated default.
+      - name: Install stable Rust
+        run: |
+          rustup toolchain install stable
+          rustup default stable
+
+      - name: Install RTIM
+        run: |
+          cargo install --root ~/.cargo/ci rustup-toolchain-install-master
+          echo "$HOME/.cargo/ci/bin" >> $GITHUB_PATH
+        shell: bash
+
+      - name: Install xargo
+        run: |
+          cargo install --root ~/.cargo/ci xargo
+        shell: bash
+
+      - name: Install "master" toolchain
+        run: |
+          if [[ ${{ github.event_name }} == 'schedule' ]]; then
+            RUSTC_HASH=$(git ls-remote https://github.com/rust-lang/rust.git master | awk '{print $1}')
+          else
+            RUSTC_HASH=$(< rust-version)
+          fi
+          rustup-toolchain-install-master \
+            -f \
+            -n master "$RUSTC_HASH" \
+            -c rust-src \
+            -c rustc-dev \
+            -c llvm-tools \
+            --host ${{ matrix.host_target }}
+          rustup default master
+        shell: bash
+
+      - name: Inspect Rust version
+        run: |
+          rustup show
+          rustc -Vv
+          cargo -V
+
+      - name: Test
+        run: bash ./ci.sh
+
+      # Don't cache "master" toolchain, it's a waste.
+      - name: Before caching
+        run: |
+          # Binary artifacts is saved in `ci/bin` dir.
+          strip ~/.cargo/ci/bin/*
+        shell: bash
+
+  rustfmt:
+    runs-on: ubuntu-latest
+    # FIXME: the project isn't fmt-ed yet.
+    if: false
+    steps:
+      - uses: actions/checkout@v2
+      - run: rustup toolchain install stable -c rustfmt
+      - run: |
+          cargo fmt -- --check
+          # Some are not in cargo workspace.
+          git ls-files 'bench*/*.rs' | xargs rustfmt --check
+          git ls-files 'cargo-miri/*.rs' | xargs rustfmt --check
+          git ls-files 'tests*/*.rs' | xargs rustfmt --check
+
   # These jobs doesn't actually test anything, but they're only used to tell
   # bors the build completed, as there is no practical way to detect when a
   # workflow is successful listening to webhooks only.
@@ -47,6 +139,7 @@ jobs:
     steps:
       - name: mark the job as a success
         run: exit 0
+
   end-failure:
     name: bors build finished
     runs-on: ubuntu-latest
