@@ -54,9 +54,11 @@ jobs:
         uses: actions/cache@v2
         with:
           path: |
+            # Taken from <https://doc.rust-lang.org/nightly/cargo/guide/cargo-home.html#caching-the-cargo-home-in-ci>.
             ~/.cargo/bin
-            ~/.cargo/registry
-            ~/.cargo/git
+            ~/.cargo/registry/index
+            ~/.cargo/registry/cache
+            ~/.cargo/git/db
             # contains package information of crates installed via `cargo install`.
             ~/.cargo/.crates.toml
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
