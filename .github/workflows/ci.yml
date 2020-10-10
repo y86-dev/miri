@@ -107,20 +107,6 @@ jobs:
           strip ~/.cargo/ci/bin/*
         shell: bash
 
-  rustfmt:
-    runs-on: ubuntu-latest
-    # FIXME: the project isn't fmt-ed yet.
-    if: false
-    steps:
-      - uses: actions/checkout@v2
-      - run: rustup toolchain install stable -c rustfmt
-      - run: |
-          cargo fmt -- --check
-          # Some are not in cargo workspace.
-          git ls-files 'bench*/*.rs' | xargs rustfmt --check
-          git ls-files 'cargo-miri/*.rs' | xargs rustfmt --check
-          git ls-files 'tests*/*.rs' | xargs rustfmt --check
-
   # These jobs doesn't actually test anything, but they're only used to tell
   # bors the build completed, as there is no practical way to detect when a
   # workflow is successful listening to webhooks only.
