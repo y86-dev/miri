@@ -45,17 +45,17 @@ function run_tests {
 # host
 run_tests
 
-case $CI_OS_NAME in
-  Linux)
+case $HOST_TARGET in
+  x86_64-unknown-linux-gnu)
     MIRI_TEST_TARGET=i686-unknown-linux-gnu run_tests
     MIRI_TEST_TARGET=x86_64-apple-darwin run_tests
     MIRI_TEST_TARGET=i686-pc-windows-msvc run_tests
     ;;
-  macOS )
+  x86_64-apple-darwin)
     MIRI_TEST_TARGET=mips64-unknown-linux-gnuabi64 run_tests # big-endian architecture
     MIRI_TEST_TARGET=x86_64-pc-windows-msvc run_tests
     ;;
-  Windows)
+  i686-pc-windows-msvc)
     MIRI_TEST_TARGET=x86_64-unknown-linux-gnu run_tests
     MIRI_TEST_TARGET=x86_64-apple-darwin run_tests
     ;;

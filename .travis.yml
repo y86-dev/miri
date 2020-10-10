@@ -31,10 +31,10 @@ before_script:
 - |
   case $TRAVIS_OS_NAME in
     linux )
-      export CI_OS_NAME=Linux
+      export HOST_TARGET=x86_64-unknown-linux-gnu
       ;;
     osx )
-      export CI_OS_NAME=macOS
+      export HOST_TARGET=x86_64-apple-darwin
       ;;
     * )
       echo "Unknown OS: $TRAVIS_OS_NAME"
