@@ -67,12 +67,15 @@ jobs:
           rustup toolchain install stable
           rustup default stable
 
-      - name: Install RTIM and xargo
+      - name: Install rustup-toolchain-install-master and xargo
         # to avoid saving rustup proxy in .cargo/bin, save CLIs in .cargo/ci/bin.
         run: |
           echo "$HOME/.cargo/ci/bin" >> $GITHUB_PATH
           cargo install --root ~/.cargo/ci rustup-toolchain-install-master
           cargo install --root ~/.cargo/ci xargo
+
+          # Strip files in `ci/bin` dir to remove useless debug-info.
+          strip ~/.cargo/ci/bin/*
         shell: bash
 
       - name: Install "master" toolchain
@@ -100,12 +103,6 @@ jobs:
 
       - name: Test
         run: bash ./ci.sh
-
-      - name: Before caching
-        run: |
-          # Strip files in `ci/bin` dir to remove useless debug-info.
-          strip ~/.cargo/ci/bin/*
-        shell: bash
 
   # These jobs doesn't actually test anything, but they're only used to tell
   # bors the build completed, as there is no practical way to detect when a
