@@ -29,6 +29,7 @@ function run_tests {
     MIRIFLAGS="-Z mir-opt-level=1" ./miri test --locked
   fi
 
+  # On Windows, there is always "python", not "python3" or "python2".
   if command -v python3; then
     PYTHON=python3
   else
