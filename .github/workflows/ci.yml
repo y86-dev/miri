@@ -54,7 +54,6 @@ jobs:
         uses: actions/cache@v2
         with:
           path: |
-            # to avoid saving rustup proxy, save xargo and RTIM in separate dir.
             ~/.cargo/ci
             ~/.cargo/registry
             ~/.cargo/git
@@ -68,14 +67,11 @@ jobs:
           rustup toolchain install stable
           rustup default stable
 
-      - name: Install RTIM
+      - name: Install RTIM and xargo
+        # to avoid saving rustup proxy in .cargo/bin, save CLIs in .cargo/ci/bin.
         run: |
-          cargo install --root ~/.cargo/ci rustup-toolchain-install-master
           echo "$HOME/.cargo/ci/bin" >> $GITHUB_PATH
-        shell: bash
-
-      - name: Install xargo
-        run: |
+          cargo install --root ~/.cargo/ci rustup-toolchain-install-master
           cargo install --root ~/.cargo/ci xargo
         shell: bash
 
