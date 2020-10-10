@@ -134,7 +134,6 @@ jobs:
     steps:
       - name: mark the job as a success
         run: exit 0
-
   end-failure:
     name: bors build finished
     runs-on: ubuntu-latest
