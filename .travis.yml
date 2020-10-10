@@ -37,7 +37,7 @@ before_script:
       export CI_OS_NAME=macOS
       ;;
     * )
-      echo "Doesn't know this OS"
+      echo "Unknown OS: $TRAVIS_OS_NAME"
       exit 1;
   esac
 # Install Rust. We use the "stable" toolchain for better caching, it is just used to build `rustup-toolchain-install-master`.
