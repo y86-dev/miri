@@ -30,7 +30,7 @@ function run_tests {
   fi
 
   # On Windows, there is always "python", not "python3" or "python2".
-  if command -v python3; then
+  if command -v python3 > /dev/null; then
     PYTHON=python3
   else
     PYTHON=python
