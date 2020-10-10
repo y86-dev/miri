@@ -54,9 +54,11 @@ jobs:
         uses: actions/cache@v2
         with:
           path: |
-            ~/.cargo/ci
+            ~/.cargo/bin
             ~/.cargo/registry
             ~/.cargo/git
+            # contains package information of crates installed via `cargo install`.
+            ~/.cargo/.crates.toml
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: ${{ runner.os }}-cargo
 
@@ -68,11 +70,9 @@ jobs:
           rustup default stable
 
       - name: Install rustup-toolchain-install-master and xargo
-        # to avoid saving rustup proxy in .cargo/bin, save CLIs in .cargo/ci/bin.
         run: |
-          echo "$HOME/.cargo/ci/bin" >> $GITHUB_PATH
-          cargo install --root ~/.cargo/ci rustup-toolchain-install-master
-          cargo install --root ~/.cargo/ci xargo
+          cargo install rustup-toolchain-install-master
+          cargo install xargo
         shell: bash
 
       - name: Install "master" toolchain
