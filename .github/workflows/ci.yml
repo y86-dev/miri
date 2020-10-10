@@ -73,9 +73,6 @@ jobs:
           echo "$HOME/.cargo/ci/bin" >> $GITHUB_PATH
           cargo install --root ~/.cargo/ci rustup-toolchain-install-master
           cargo install --root ~/.cargo/ci xargo
-
-          # Strip files in `ci/bin` dir to remove useless debug-info.
-          strip ~/.cargo/ci/bin/*
         shell: bash
 
       - name: Install "master" toolchain
