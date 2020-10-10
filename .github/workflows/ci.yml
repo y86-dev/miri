@@ -101,10 +101,9 @@ jobs:
       - name: Test
         run: bash ./ci.sh
 
-      # Don't cache "master" toolchain, it's a waste.
       - name: Before caching
         run: |
-          # Binary artifacts is saved in `ci/bin` dir.
+          # Strip files in `ci/bin` dir to remove useless debug-info.
           strip ~/.cargo/ci/bin/*
         shell: bash
 
