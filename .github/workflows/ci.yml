@@ -36,7 +36,7 @@ jobs:
 
       - name: Setting build env
         run: |
-          echo "RUST_OS_NAME=${{ runner.os }}" >> $GITHUB_ENV
+          echo "CI_OS_NAME=${{ runner.os }}" >> $GITHUB_ENV
         shell: bash
 
       # We install gnu-tar because BSD tar is buggy on Github's macos machines.

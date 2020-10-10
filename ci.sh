@@ -44,7 +44,7 @@ function run_tests {
 # host
 run_tests
 
-case $RUST_OS_NAME in
+case $CI_OS_NAME in
   Linux)
     MIRI_TEST_TARGET=i686-unknown-linux-gnu run_tests
     MIRI_TEST_TARGET=x86_64-apple-darwin run_tests
