@@ -18,6 +18,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     env:
       RUST_BACKTRACE: 1
+      HOST_TARGET: ${{ matrix.host_target }}
     strategy:
       matrix:
         build: [linux64, macos, win32]
@@ -33,11 +34,6 @@ jobs:
             host_target: i686-pc-windows-msvc
     steps:
       - uses: actions/checkout@v2
-
-      - name: Setting build env
-        run: |
-          echo "HOST_TARGET=${{ matrix.host_target }}" >> $GITHUB_ENV
-        shell: bash
 
       # We install gnu-tar because BSD tar is buggy on Github's macos machines.
       # See <https://github.com/actions/cache/issues/403>.
