@@ -5,7 +5,6 @@ jobs:
     env: HOST_TARGET=x86_64-unknown-linux-gnu
   - os: osx
     env: HOST_TARGET=x86_64-apple-darwin
-
 dist: xenial
 cache:
   # Cache the global cargo directory, but NOT the local `target` directory which
