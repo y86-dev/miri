@@ -64,11 +64,6 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: ${{ runner.os }}-cargo
 
-      # "stable" toolchain used for bootstrapping and building `rustup-toolchain-install-master`.
-      - name: Update stable Rust
-        run: |
-          rustup update --no-self-update
-
       - name: Install rustup-toolchain-install-master and xargo
         run: |
           cargo install rustup-toolchain-install-master
