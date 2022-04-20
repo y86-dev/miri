@@ -401,7 +401,8 @@ fn main() {
                         .strip_prefix("-Zmiri-track-pointer-tag=")
                         .unwrap()
                         .split(',')
-                        .map(str::parse::<u64>).collect()
+                        .map(str::parse::<u64>)
+                        .collect()
                     {
                         Ok(ids) => ids,
                         Err(err) =>
@@ -428,7 +429,10 @@ fn main() {
                     {
                         Ok(ids) => ids,
                         Err(err) =>
-                            panic!("-Zmiri-track-call-id requires a comma separated list of valid `u64` arguments: {}", err),
+                            panic!(
+                                "-Zmiri-track-call-id requires a comma separated list of valid `u64` arguments: {}",
+                                err
+                            ),
                     };
                     for id in ids.into_iter().map(miri::CallId::new) {
                         if let Some(id) = id {
@@ -449,7 +453,9 @@ fn main() {
                     {
                         Some(ids) => ids,
                         None =>
-                            panic!("-Zmiri-track-alloc-id requires a comma separated list of valid non-zero `u64` arguments"),
+                            panic!(
+                                "-Zmiri-track-alloc-id requires a comma separated list of valid non-zero `u64` arguments"
+                            ),
                     };
                     miri_config.tracked_alloc_ids.extend(ids);
                 }

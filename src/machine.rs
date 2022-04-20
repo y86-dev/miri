@@ -3,10 +3,10 @@
 
 use std::borrow::Cow;
 use std::cell::RefCell;
+use std::collections::HashSet;
 use std::fmt;
 use std::num::NonZeroU64;
 use std::time::Instant;
-use std::collections::HashSet;
 
 use rand::rngs::StdRng;
 use rand::SeedableRng;
