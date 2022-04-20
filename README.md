@@ -320,7 +320,7 @@ environment variable:
 * `-Zmiri-track-call-id=<id>` shows a backtrace when the given call id is
   assigned to a stack frame.  This helps in debugging UB related to Stacked
   Borrows "protectors".
-* `-Zmiri-track-pointer-tag=<tag>` shows a backtrace when the given pointer tag
+* `-Zmiri-track-pointer-tag=<tag-list>` shows a backtrace when a given pointer tag
   is popped from a borrow stack (which is where the tag becomes invalid and any
   future use of it will error).  This helps you in finding out why UB is
   happening and where in your code would be a good place to look for it.

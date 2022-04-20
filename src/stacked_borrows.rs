@@ -15,6 +15,7 @@ use rustc_middle::ty::{
 };
 use rustc_span::DUMMY_SP;
 use rustc_target::abi::Size;
+use std::collections::HashSet;
 
 use crate::*;
 
@@ -104,8 +105,8 @@ pub struct GlobalStateInner {
     next_call_id: CallId,
     /// Those call IDs corresponding to functions that are still running.
     active_calls: FxHashSet<CallId>,
-    /// The pointer id to trace
-    tracked_pointer_tag: Option<PtrId>,
+    /// The pointer ids to trace
+    tracked_pointer_tags: HashSet<PtrId>,
     /// The call id to trace
     tracked_call_id: Option<CallId>,
     /// Whether to track raw pointers.
@@ -158,7 +159,7 @@ impl fmt::Display for RefKind {
 /// Utilities for initialization and ID generation
 impl GlobalStateInner {
     pub fn new(
-        tracked_pointer_tag: Option<PtrId>,
+        tracked_pointer_tags: HashSet<PtrId>,
         tracked_call_id: Option<CallId>,
         tag_raw: bool,
     ) -> Self {
@@ -167,7 +168,7 @@ impl GlobalStateInner {
             base_ptr_ids: FxHashMap::default(),
             next_call_id: NonZeroU64::new(1).unwrap(),
             active_calls: FxHashSet::default(),
-            tracked_pointer_tag,
+            tracked_pointer_tags,
             tracked_call_id,
             tag_raw,
         }
@@ -175,7 +176,7 @@ impl GlobalStateInner {
 
     fn new_ptr(&mut self) -> PtrId {
         let id = self.next_ptr_id;
-        if Some(id) == self.tracked_pointer_tag {
+        if self.tracked_pointer_tags.contains(&id) {
             register_diagnostic(NonHaltingDiagnostic::CreatedPointerTag(id));
         }
         self.next_ptr_id = NonZeroU64::new(id.get() + 1).unwrap();
@@ -311,7 +312,7 @@ impl<'tcx> Stack {
         global: &GlobalStateInner,
     ) -> InterpResult<'tcx> {
         if let SbTag::Tagged(id) = item.tag {
-            if Some(id) == global.tracked_pointer_tag {
+            if global.tracked_pointer_tags.contains(&id) {
                 register_diagnostic(NonHaltingDiagnostic::PoppedPointerTag(
                     item.clone(),
                     provoking_access,

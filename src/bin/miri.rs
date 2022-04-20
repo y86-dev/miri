@@ -397,19 +397,20 @@ fn main() {
                         .push(arg.strip_prefix("-Zmiri-env-forward=").unwrap().to_owned());
                 }
                 arg if arg.starts_with("-Zmiri-track-pointer-tag=") => {
-                    let id: u64 =
-                        match arg.strip_prefix("-Zmiri-track-pointer-tag=").unwrap().parse() {
-                            Ok(id) => id,
-                            Err(err) =>
-                                panic!(
-                                    "-Zmiri-track-pointer-tag requires a valid `u64` argument: {}",
-                                    err
-                                ),
-                        };
-                    if let Some(id) = miri::PtrId::new(id) {
-                        miri_config.tracked_pointer_tag = Some(id);
-                    } else {
-                        panic!("-Zmiri-track-pointer-tag requires a nonzero argument");
+                    let ids: Vec<u64> = match arg.strip_prefix("-Zmiri-track-pointer-tag=").unwrap().split(',').map(|id| id.parse::<u64>()).collect() {
+                        Ok(ids) => ids,
+                        Err(err) =>
+                            panic!(
+                                "-Zmiri-track-pointer-tag requires a comma seperated list of valid `u64` arguments: {}",
+                                err
+                            ),
+                    };
+                    for id in ids.into_iter().map(miri::PtrId::new) {
+                        if let Some(id) = id {
+                            miri_config.tracked_pointer_tags.insert(id);
+                        } else {
+                            panic!("-Zmiri-track-pointer-tag requires nonzero arguments");
+                        }
                     }
                 }
                 arg if arg.starts_with("-Zmiri-track-call-id=") => {

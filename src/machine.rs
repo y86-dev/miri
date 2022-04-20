@@ -303,7 +303,7 @@ impl<'mir, 'tcx> Evaluator<'mir, 'tcx> {
         let rng = StdRng::seed_from_u64(config.seed.unwrap_or(0));
         let stacked_borrows = if config.stacked_borrows {
             Some(RefCell::new(stacked_borrows::GlobalStateInner::new(
-                config.tracked_pointer_tag,
+                config.tracked_pointer_tags.clone(),
                 config.tracked_call_id,
                 config.tag_raw,
             )))

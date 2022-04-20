@@ -15,6 +15,8 @@ use rustc_target::spec::abi::Abi;
 
 use rustc_session::config::EntryFnType;
 
+use std::collections::HashSet;
+
 use crate::*;
 
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -91,8 +93,8 @@ pub struct MiriConfig {
     pub args: Vec<String>,
     /// The seed to use when non-determinism or randomness are required (e.g. ptr-to-int cast, `getrandom()`).
     pub seed: Option<u64>,
-    /// The stacked borrows pointer id to report about
-    pub tracked_pointer_tag: Option<PtrId>,
+    /// The stacked borrows pointer ids to report about
+    pub tracked_pointer_tags: HashSet<PtrId>,
     /// The stacked borrows call ID to report about
     pub tracked_call_id: Option<CallId>,
     /// The allocation id to report about.
@@ -130,7 +132,7 @@ impl Default for MiriConfig {
             forwarded_env_vars: vec![],
             args: vec![],
             seed: None,
-            tracked_pointer_tag: None,
+            tracked_pointer_tags: Default::default(),
             tracked_call_id: None,
             tracked_alloc_id: None,
             tag_raw: false,
