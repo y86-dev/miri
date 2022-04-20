@@ -314,10 +314,10 @@ environment variable:
   ensure alignment.  (The standard library `align_to` method works fine in both
   modes; under symbolic alignment it only fills the middle slice when the
   allocation guarantees sufficient alignment.)
-* `-Zmiri-track-alloc-id=<id>` shows a backtrace when the given allocation is
+* `-Zmiri-track-alloc-id=<id-list>` shows a backtrace when the given allocations are
   being allocated or freed.  This helps in debugging memory leaks and
   use after free bugs.
-* `-Zmiri-track-call-id=<id>` shows a backtrace when the given call id is
+* `-Zmiri-track-call-id=<id-list>` shows a backtrace when the given call ids are
   assigned to a stack frame.  This helps in debugging UB related to Stacked
   Borrows "protectors".
 * `-Zmiri-track-pointer-tag=<tag-list>` shows a backtrace when a given pointer tag

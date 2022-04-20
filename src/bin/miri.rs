@@ -397,11 +397,16 @@ fn main() {
                         .push(arg.strip_prefix("-Zmiri-env-forward=").unwrap().to_owned());
                 }
                 arg if arg.starts_with("-Zmiri-track-pointer-tag=") => {
-                    let ids: Vec<u64> = match arg.strip_prefix("-Zmiri-track-pointer-tag=").unwrap().split(',').map(|id| id.parse::<u64>()).collect() {
+                    let ids: Vec<u64> = match arg
+                        .strip_prefix("-Zmiri-track-pointer-tag=")
+                        .unwrap()
+                        .split(',')
+                        .map(str::parse::<u64>).collect()
+                    {
                         Ok(ids) => ids,
                         Err(err) =>
                             panic!(
-                                "-Zmiri-track-pointer-tag requires a comma seperated list of valid `u64` arguments: {}",
+                                "-Zmiri-track-pointer-tag requires a comma separated list of valid `u64` arguments: {}",
                                 err
                             ),
                     };
@@ -414,30 +419,39 @@ fn main() {
                     }
                 }
                 arg if arg.starts_with("-Zmiri-track-call-id=") => {
-                    let id: u64 = match arg.strip_prefix("-Zmiri-track-call-id=").unwrap().parse() {
-                        Ok(id) => id,
+                    let ids: Vec<u64> = match arg
+                        .strip_prefix("-Zmiri-track-call-id=")
+                        .unwrap()
+                        .split(',')
+                        .map(str::parse::<u64>)
+                        .collect()
+                    {
+                        Ok(ids) => ids,
                         Err(err) =>
-                            panic!("-Zmiri-track-call-id requires a valid `u64` argument: {}", err),
+                            panic!("-Zmiri-track-call-id requires a comma separated list of valid `u64` arguments: {}", err),
                     };
-                    if let Some(id) = miri::CallId::new(id) {
-                        miri_config.tracked_call_id = Some(id);
-                    } else {
-                        panic!("-Zmiri-track-call-id requires a nonzero argument");
+                    for id in ids.into_iter().map(miri::CallId::new) {
+                        if let Some(id) = id {
+                            miri_config.tracked_call_ids.insert(id);
+                        } else {
+                            panic!("-Zmiri-track-call-id requires a nonzero argument");
+                        }
                     }
                 }
                 arg if arg.starts_with("-Zmiri-track-alloc-id=") => {
-                    let id = match arg
+                    let ids: Vec<miri::AllocId> = match arg
                         .strip_prefix("-Zmiri-track-alloc-id=")
                         .unwrap()
-                        .parse()
-                        .ok()
-                        .and_then(NonZeroU64::new)
+                        .split(',')
+                        .map(str::parse::<u64>)
+                        .map(|id| id.ok().and_then(NonZeroU64::new).map(miri::AllocId))
+                        .collect()
                     {
-                        Some(id) => id,
+                        Some(ids) => ids,
                         None =>
-                            panic!("-Zmiri-track-alloc-id requires a valid non-zero `u64` argument"),
+                            panic!("-Zmiri-track-alloc-id requires a comma separated list of valid non-zero `u64` arguments"),
                     };
-                    miri_config.tracked_alloc_id = Some(miri::AllocId(id));
+                    miri_config.tracked_alloc_ids.extend(ids);
                 }
                 arg if arg.starts_with("-Zmiri-compare-exchange-weak-failure-rate=") => {
                     let rate = match arg

@@ -107,8 +107,8 @@ pub struct GlobalStateInner {
     active_calls: FxHashSet<CallId>,
     /// The pointer ids to trace
     tracked_pointer_tags: HashSet<PtrId>,
-    /// The call id to trace
-    tracked_call_id: Option<CallId>,
+    /// The call ids to trace
+    tracked_call_ids: HashSet<CallId>,
     /// Whether to track raw pointers.
     tag_raw: bool,
 }
@@ -160,7 +160,7 @@ impl fmt::Display for RefKind {
 impl GlobalStateInner {
     pub fn new(
         tracked_pointer_tags: HashSet<PtrId>,
-        tracked_call_id: Option<CallId>,
+        tracked_call_ids: HashSet<CallId>,
         tag_raw: bool,
     ) -> Self {
         GlobalStateInner {
@@ -169,7 +169,7 @@ impl GlobalStateInner {
             next_call_id: NonZeroU64::new(1).unwrap(),
             active_calls: FxHashSet::default(),
             tracked_pointer_tags,
-            tracked_call_id,
+            tracked_call_ids,
             tag_raw,
         }
     }
@@ -186,7 +186,7 @@ impl GlobalStateInner {
     pub fn new_call(&mut self) -> CallId {
         let id = self.next_call_id;
         trace!("new_call: Assigning ID {}", id);
-        if Some(id) == self.tracked_call_id {
+        if self.tracked_call_ids.contains(&id) {
             register_diagnostic(NonHaltingDiagnostic::CreatedCallId(id));
         }
         assert!(self.active_calls.insert(id));
