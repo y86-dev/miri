@@ -46,6 +46,8 @@ pub enum Permission {
     Unique,
     /// Grants shared mutable access.
     SharedReadWrite,
+    /// SRW but marked as two-phase
+    TwoPhasedRW,
     /// Grants shared read-only access.
     SharedReadOnly,
     /// Grants no access, but separates two groups of SharedReadWrite so they are not
@@ -109,6 +111,8 @@ pub struct GlobalStateInner {
     tracked_pointer_tags: HashSet<PtrId>,
     /// The call ids to trace
     tracked_call_ids: HashSet<CallId>,
+    /// The alloced location ids that we want to print the stack of
+    tracked_alloced_location_ids: HashSet<AllocId>,
     /// Whether to track raw pointers.
     tag_raw: bool,
 }
@@ -156,11 +160,37 @@ impl fmt::Display for RefKind {
     }
 }
 
+impl fmt::Display for Stack {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "[")?;
+        let len = self.borrows.len();
+        for (i, item) in self.borrows.iter().enumerate() {
+            let perm = match item.perm {
+                Permission::Unique => "UNQ",
+                Permission::SharedReadWrite => "SRW",
+                Permission::TwoPhasedRW => "TPU",
+                Permission::SharedReadOnly => "SRO",
+                Permission::Disabled => "DBL",
+            };
+            let tag = item.tag;
+            write!(f, "{perm}{tag:?}")?;
+            if let Some(proc) = item.protector {
+                write!(f, "[proc({proc:?})]")?;
+            }
+            if i + 1 < len {
+                write!(f, ", ")?;
+            }
+        }
+        write!(f, "]")
+    }
+}
+
 /// Utilities for initialization and ID generation
 impl GlobalStateInner {
     pub fn new(
         tracked_pointer_tags: HashSet<PtrId>,
         tracked_call_ids: HashSet<CallId>,
+        tracked_alloced_location_ids: HashSet<AllocId>,
         tag_raw: bool,
     ) -> Self {
         GlobalStateInner {
@@ -170,6 +200,7 @@ impl GlobalStateInner {
             active_calls: FxHashSet::default(),
             tracked_pointer_tags,
             tracked_call_ids,
+            tracked_alloced_location_ids,
             tag_raw,
         }
     }
@@ -284,7 +315,7 @@ impl<'tcx> Stack {
             Permission::Disabled => bug!("Cannot use Disabled for anything"),
             // On a write, everything above us is incompatible.
             Permission::Unique => granting + 1,
-            Permission::SharedReadWrite => {
+            Permission::SharedReadWrite | Permission::TwoPhasedRW => {
                 // The SharedReadWrite *just* above us are compatible, to skip those.
                 let mut idx = granting + 1;
                 while let Some(item) = self.borrows.get(idx) {
@@ -351,6 +382,7 @@ impl<'tcx> Stack {
         (alloc_id, range, offset): (AllocId, AllocRange, Size), // just for debug printing and error messages
         global: &GlobalStateInner,
     ) -> InterpResult<'tcx> {
+        let tracked_alloc = global.tracked_alloced_location_ids.contains(&alloc_id);
         // Two main steps: Find granting item, remove incompatible items above.
 
         // Step 1: Find granting item.
@@ -364,9 +396,13 @@ impl<'tcx> Stack {
             // Remove everything above the write-compatible items, like a proper stack. This makes sure read-only and unique
             // pointers become invalid on write accesses (ensures F2a, and ensures U2 for write accesses).
             let first_incompatible_idx = self.find_first_write_incompatible(granting_idx);
-            for item in self.borrows.drain(first_incompatible_idx..).rev() {
+            while self.borrows.len() > first_incompatible_idx {
+                let item = self.borrows.pop().unwrap();
                 trace!("access: popping item {:?}", item);
                 Stack::check_protector(&item, Some((tag, access)), global)?;
+                if tracked_alloc {
+                    register_diagnostic(NonHaltingDiagnostic::StackUpdate(self.clone(), StackUpdateType::Remove(item.tag)));
+                }
             }
         } else {
             // On a read, *disable* all `Unique` above the granting item.  This ensures U2 for read accesses.
@@ -383,10 +419,16 @@ impl<'tcx> Stack {
                     trace!("access: disabling item {:?}", item);
                     Stack::check_protector(item, Some((tag, access)), global)?;
                     item.perm = Permission::Disabled;
+                    if tracked_alloc {
+                        let tag = item.tag;
+                        register_diagnostic(NonHaltingDiagnostic::StackUpdate(self.clone(), StackUpdateType::Changed(tag)));
+                    }
                 }
             }
         }
-
+        if tracked_alloc {
+            register_diagnostic(NonHaltingDiagnostic::StackAccess(self.clone(), tag));
+        }
         // Done.
         Ok(())
     }
@@ -406,10 +448,13 @@ impl<'tcx> Stack {
                 tag, dbg_ptr,
             ), None)
         })?;
-
+        let tracked_alloc = global.tracked_alloced_location_ids.contains(&dbg_ptr.provenance);
         // Step 2: Remove all items.  Also checks for protectors.
-        for item in self.borrows.drain(..).rev() {
+        while let Some(item) = self.borrows.pop() {
             Stack::check_protector(&item, None, global)?;
+            if tracked_alloc {
+                register_diagnostic(NonHaltingDiagnostic::StackUpdate(self.clone(), StackUpdateType::Remove(item.tag)));
+            }
         }
 
         Ok(())
@@ -470,6 +515,10 @@ impl<'tcx> Stack {
         } else {
             trace!("reborrow: adding item {:?}", new);
             self.borrows.insert(new_idx, new);
+        }
+
+        if global.tracked_alloced_location_ids.contains(&alloc_id) {
+            register_diagnostic(NonHaltingDiagnostic::StackUpdate(self.clone(), StackUpdateType::Added(new.tag)));
         }
 
         Ok(())
@@ -739,6 +788,7 @@ trait EvalContextPrivExt<'mir, 'tcx: 'mir>: crate::MiriEvalContextExt<'mir, 'tcx
                 // Only if the type is unpin do we actually enforce uniqueness
                 Permission::Unique
             }
+            RefKind::Unique { two_phase: true} => Permission::TwoPhasedRW,
             RefKind::Unique { .. } => {
                 // Two-phase references and !Unpin references are treated as SharedReadWrite
                 Permission::SharedReadWrite

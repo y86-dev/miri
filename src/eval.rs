@@ -99,6 +99,9 @@ pub struct MiriConfig {
     pub tracked_call_ids: HashSet<CallId>,
     /// The allocation ids to report about.
     pub tracked_alloc_ids: HashSet<AllocId>,
+    /// The allocation ids that we will track closely, printing the full stack on each
+    /// access/modification.
+    pub tracked_alloced_location_ids: HashSet<AllocId>,
     /// Whether to track raw pointers in stacked borrows.
     pub tag_raw: bool,
     /// Determine if data race detection should be enabled
@@ -135,6 +138,7 @@ impl Default for MiriConfig {
             tracked_pointer_tags: HashSet::default(),
             tracked_call_ids: HashSet::default(),
             tracked_alloc_ids: HashSet::default(),
+            tracked_alloced_location_ids: HashSet::default(),
             tag_raw: false,
             data_race_detector: true,
             cmpxchg_weak_failure_rate: 0.8,

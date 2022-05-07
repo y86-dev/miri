@@ -464,6 +464,19 @@ fn main() {
                     };
                     miri_config.tracked_alloc_ids.extend(ids);
                 }
+                arg if arg.starts_with("-ZZmiri-track-alloced-location=") => {
+                    let ids: Vec<miri::AllocId> = match parse_comma_list::<NonZeroU64>(
+                        arg.strip_prefix("-ZZmiri-track-alloced-location=").unwrap(),
+                    ) {
+                        Ok(ids) => ids.into_iter().map(miri::AllocId).collect(),
+                        Err(err) =>
+                            panic!(
+                                "-ZZmiri-track-alloced-location requires a comma separated list of valid non-zero `u64` arguments: {}",
+                                err
+                            ),
+                    };
+                    miri_config.tracked_alloced_location_ids.extend(ids);
+                }
                 arg if arg.starts_with("-Zmiri-compare-exchange-weak-failure-rate=") => {
                     let rate = match arg
                         .strip_prefix("-Zmiri-compare-exchange-weak-failure-rate=")
