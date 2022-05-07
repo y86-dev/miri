@@ -447,6 +447,9 @@ impl<'tcx> Stack {
             // This pattern occurs a lot in the standard library: create a raw pointer, then also create a shared
             // reference and use that.
             // We *disable* instead of removing `Unique` to avoid "connecting" two neighbouring blocks of SRWs.
+            //
+            // We also change SharedReadWrite to SharedReadOnly, because further writes by that
+            // pointer would invalidate the uniqueness guarantee of Unique.
             for idx in ((granting_idx + 1)..self.borrows.len()).rev() {
                 let item = &mut self.borrows[idx];
                 if item.perm == Permission::Unique {
@@ -459,6 +462,14 @@ impl<'tcx> Stack {
                     )?;
                     item.perm = Permission::Disabled;
                     alloc_history.log_invalidation(item.tag, alloc_range, threads);
+                    if tracked_alloc {
+                        let tag = item.tag;
+                        register_diagnostic(NonHaltingDiagnostic::StackUpdate(self.clone(), StackUpdateType::Changed(tag)));
+                    }
+                } else if item.perm == Permission::SharedReadWrite {
+                    trace!("access: revoking write access from item: {item:?}");
+                    Stack::check_protector(item, Some((tag, access)), global)?;
+                    item.perm = Permission::SharedReadOnly;
                     if tracked_alloc {
                         let tag = item.tag;
                         register_diagnostic(NonHaltingDiagnostic::StackUpdate(self.clone(), StackUpdateType::Changed(tag)));
