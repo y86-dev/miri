@@ -69,6 +69,26 @@ pub enum NonHaltingDiagnostic {
     CreatedAlloc(AllocId),
     FreedAlloc(AllocId),
     RejectedIsolatedOp(String),
+    StackUpdate(Stack, StackUpdateType),
+    StackAccess(Stack, SbTag),
+}
+
+#[derive(Clone, Copy)]
+pub enum StackUpdateType {
+    Remove(SbTag),
+    Changed(SbTag),
+    Added(SbTag),
+}
+
+impl fmt::Display for StackUpdateType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        use StackUpdateType::*;
+        match self {
+            Remove(tag) => write!(f, "removed {tag:?}"),
+            Added(tag) => write!(f, "added {tag:?}"),
+            Changed(tag) => write!(f, "changed {tag:?}"),
+        }
+    }
 }
 
 /// Level of Miri specific diagnostics
@@ -457,6 +477,8 @@ pub trait EvalContextExt<'mir, 'tcx: 'mir>: crate::MiriEvalContextExt<'mir, 'tcx
                     FreedAlloc(AllocId(id)) => format!("freed allocation with id {id}"),
                     RejectedIsolatedOp(ref op) =>
                         format!("{op} was made to return an error due to isolation"),
+                    StackUpdate(ref stack, typ) => format!("stack updated [{typ}] to {stack}"),
+                    StackAccess(ref stack, tag) => format!("stack accessed using {tag:?}: {stack}"),
                 };
 
                 let (title, diag_level) = match e {

@@ -72,7 +72,7 @@ pub use crate::data_race::{
 };
 pub use crate::diagnostics::{
     register_diagnostic, report_error, EvalContextExt as DiagnosticsEvalContextExt,
-    NonHaltingDiagnostic, TerminationInfo,
+    NonHaltingDiagnostic, StackUpdateType, TerminationInfo,
 };
 pub use crate::eval::{
     create_ecx, eval_entry, AlignmentCheck, BacktraceStyle, IsolatedOp, MiriConfig, RejectOpWith,
