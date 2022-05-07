@@ -450,6 +450,7 @@ impl<'tcx> Stack {
             //
             // We also change SharedReadWrite to SharedReadOnly, because further writes by that
             // pointer would invalidate the uniqueness guarantee of Unique.
+            let revoke_read = matches!(self.borrows[granting_idx].perm, Permission::Unique | Permission::SharedReadOnly);
             for idx in ((granting_idx + 1)..self.borrows.len()).rev() {
                 let item = &mut self.borrows[idx];
                 if item.perm == Permission::Unique {
@@ -466,7 +467,7 @@ impl<'tcx> Stack {
                         let tag = item.tag;
                         register_diagnostic(NonHaltingDiagnostic::StackUpdate(self.clone(), StackUpdateType::Changed(tag)));
                     }
-                } else if item.perm == Permission::SharedReadWrite {
+                } else if revoke_read && item.perm == Permission::SharedReadWrite {
                     trace!("access: revoking write access from item: {item:?}");
                     Stack::check_protector(item, Some((tag, access)), global)?;
                     item.perm = Permission::SharedReadOnly;
