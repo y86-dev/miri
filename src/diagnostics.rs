@@ -432,16 +432,22 @@ pub trait EvalContextExt<'mir, 'tcx: 'mir>: crate::MiriEvalContextExt<'mir, 'tcx
             }
             // Add popped frame back.
             if stacktrace.len() < info.stack_size {
-                assert!(
-                    stacktrace.len() == info.stack_size - 1,
-                    "we should never pop more than one frame at once"
-                );
-                let frame_info = FrameInfo {
-                    instance: info.instance.unwrap(),
-                    span: info.span,
-                    lint_root: None,
-                };
-                stacktrace.insert(0, frame_info);
+                if stacktrace.len() != info.stack_size - 1 {
+                    println!("error:! we should never pop more than one frame at once");
+                    let frame_info = FrameInfo {
+                        instance: info.instance.unwrap(),
+                        span: DUMMY_SP,
+                        lint_root: None,
+                    };
+                    stacktrace.insert(0, frame_info);
+                } else {
+                    let frame_info = FrameInfo {
+                        instance: info.instance.unwrap(),
+                        span: info.span,
+                        lint_root: None,
+                    };
+                    stacktrace.insert(0, frame_info);
+                }
             } else if let Some(instance) = info.instance {
                 // Adjust topmost frame.
                 stacktrace[0].span = info.span;
@@ -486,7 +492,7 @@ pub trait EvalContextExt<'mir, 'tcx: 'mir>: crate::MiriEvalContextExt<'mir, 'tcx
                         ("operation rejected by isolation", DiagLevel::Warning),
                     _ => ("tracking was triggered", DiagLevel::Note),
                 };
-
+                println!("{msg}");
                 report_msg(this, diag_level, title, vec![msg], vec![], &stacktrace);
             }
         });

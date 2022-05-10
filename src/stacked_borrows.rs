@@ -467,7 +467,7 @@ impl<'tcx> Stack {
                         let tag = item.tag;
                         register_diagnostic(NonHaltingDiagnostic::StackUpdate(self.clone(), StackUpdateType::Changed(tag)));
                     }
-                } else if revoke_read && item.perm == Permission::SharedReadWrite {
+                } else if revoke_read && matches!(item.perm, Permission::SharedReadWrite | Permission::TwoPhasedRW) {
                     trace!("access: revoking write access from item: {item:?}");
                     Stack::check_protector(item, Some((tag, access)), global)?;
                     item.perm = Permission::SharedReadOnly;
