@@ -422,6 +422,9 @@ impl<'tcx> Stack {
             .ok_or_else(|| alloc_history.access_error(access, tag, alloc_id, range, offset, self))?;
         if access == AccessKind::Write && self.borrows[granting_idx].perm == Permission::TwoPhasedRW {
             self.borrows[granting_idx].perm = Permission::SharedReadWrite;
+            if tracked_alloc {
+                register_diagnostic(NonHaltingDiagnostic::StackUpdate(self.clone(), StackUpdateType::Changed(self.borrows[granting_idx].tag)));
+            }
         }
 
         // Step 2: Remove incompatible items above them.  Make sure we do not remove protected
@@ -550,7 +553,7 @@ impl<'tcx> Stack {
         // Compute where to put the new item.
         // Either way, we ensure that we insert the new item in a way such that between
         // `derived_from` and the new one, there are only items *compatible with* `derived_from`.
-        let new_idx = if new.perm == Permission::SharedReadWrite {
+        let new_idx = if matches!(new.perm, Permission::SharedReadWrite | Permission::TwoPhasedRW) {
             assert!(
                 access == AccessKind::Write,
                 "this case only makes sense for stack-like accesses"
