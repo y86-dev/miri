@@ -5,9 +5,9 @@ use std::ptr;
 fn main() {
     read_does_not_invalidate1();
     read_does_not_invalidate2();
-    mut_raw_then_mut_shr();
+    // mut_raw_then_mut_shr();
     mut_shr_then_mut_raw();
-    mut_raw_mut();
+    // mut_raw_mut();
     partially_invalidate_mut();
     drop_after_sharing();
     direct_mut_to_const_raw();
