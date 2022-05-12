@@ -44,6 +44,7 @@ fn read_does_not_invalidate2() {
 
 // Escape a mut to raw, then share the same mut and use the share, then the raw.
 // That should work.
+#[allow(dead_code)]
 fn mut_raw_then_mut_shr() {
     let mut x = 2;
     let xref = &mut x;
@@ -68,6 +69,7 @@ fn mut_shr_then_mut_raw() {
 // and then read through the original mut, that does not invalidate the raw.
 // This shows that the read-exception for `&mut` applies even if the `Shr` item
 // on the stack is not at the top.
+#[allow(dead_code)]
 fn mut_raw_mut() {
     let mut x = 2;
     {
