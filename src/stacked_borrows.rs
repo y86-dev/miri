@@ -334,7 +334,7 @@ impl<'tcx> Stack {
                 // The SharedReadWrite *just* above us are compatible, to skip those.
                 let mut idx = granting + 1;
                 while let Some(item) = self.borrows.get(idx) {
-                    if item.perm == Permission::SharedReadWrite {
+                    if matches!(item.perm, Permission::SharedReadWrite | Permission::TwoPhasedRW) {
                         // Go on.
                         idx += 1;
                     } else {
@@ -417,6 +417,12 @@ impl<'tcx> Stack {
         let granting_idx = self.find_granting(access, tag).ok_or_else(|| {
             alloc_history.access_error(access, tag, alloc_id, alloc_range, offset, self)
         })?;
+        let granting_idx = self
+            .find_granting(access, tag)
+            .ok_or_else(|| alloc_history.access_error(access, tag, alloc_id, range, offset, self))?;
+        if access == AccessKind::Write && self.borrows[granting_idx].perm == Permission::TwoPhasedRW {
+            self.borrows[granting_idx].perm = Permission::SharedReadWrite;
+        }
 
         // Step 2: Remove incompatible items above them.  Make sure we do not remove protected
         // items.  Behavior differs for reads and writes.

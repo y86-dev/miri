@@ -291,8 +291,9 @@ fn test_symlink() {
         // Make the buf one byte larger than it needs to be,
         // and check that the last byte is not overwritten.
         let mut large_buf = vec![0xFF; expected_path.len() + 1];
+        let len = large_buf.len();
         let res = unsafe {
-            libc::readlink(symlink_c_ptr, large_buf.as_mut_ptr().cast(), large_buf.len())
+            libc::readlink(symlink_c_ptr, large_buf.as_mut_ptr().cast(), len)
         };
         // Check that the resovled path was properly written into the buf.
         assert_eq!(&large_buf[..(large_buf.len() - 1)], expected_path);
@@ -302,16 +303,18 @@ fn test_symlink() {
         // Test that the resolved path is truncated if the provided buffer
         // is too small.
         let mut small_buf = [0u8; 2];
+        let len = small_buf.len();
         let res = unsafe {
-            libc::readlink(symlink_c_ptr, small_buf.as_mut_ptr().cast(), small_buf.len())
+            libc::readlink(symlink_c_ptr, small_buf.as_mut_ptr().cast(), len)
         };
         assert_eq!(small_buf, &expected_path[..small_buf.len()]);
         assert_eq!(res, small_buf.len() as isize);
 
         // Test that we report a proper error for a missing path.
         let bad_path = CString::new("MIRI_MISSING_FILE_NAME").unwrap();
+        let len = small_buf.len();
         let res = unsafe {
-            libc::readlink(bad_path.as_ptr(), small_buf.as_mut_ptr().cast(), small_buf.len())
+            libc::readlink(bad_path.as_ptr(), small_buf.as_mut_ptr().cast(), len)
         };
         assert_eq!(res, -1);
         assert_eq!(Error::last_os_error().kind(), ErrorKind::NotFound);
