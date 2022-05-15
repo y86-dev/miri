@@ -414,12 +414,9 @@ impl<'tcx> Stack {
         // Two main steps: Find granting item, remove incompatible items above.
 
         // Step 1: Find granting item.
-        let granting_idx = self.find_granting(access, tag).ok_or_else(|| {
-            alloc_history.access_error(access, tag, alloc_id, alloc_range, offset, self)
-        })?;
         let granting_idx = self
             .find_granting(access, tag)
-            .ok_or_else(|| alloc_history.access_error(access, tag, alloc_id, range, offset, self))?;
+            .ok_or_else(|| alloc_history.access_error(access, tag, alloc_id, alloc_range, offset, self))?;
         if access == AccessKind::Write && self.borrows[granting_idx].perm == Permission::TwoPhasedRW {
             self.borrows[granting_idx].perm = Permission::SharedReadWrite;
             if tracked_alloc {
@@ -478,7 +475,7 @@ impl<'tcx> Stack {
                     }
                 } else if revoke_write && matches!(item.perm, Permission::SharedReadWrite) {
                     trace!("access: revoking write access from item: {item:?}");
-                    Stack::check_protector(item, Some((tag, access)), global)?;
+                    Stack::check_protector(item, Some((tag, alloc_range, offset, access)), global, alloc_history)?;
                     item.perm = Permission::SharedReadOnly;
                     if tracked_alloc {
                         let tag = item.tag;
@@ -513,14 +510,9 @@ impl<'tcx> Stack {
                 alloc_history.get_logs_relevant_to(tag, alloc_range, offset, None),
             )
         })?;
-        let tracked_alloc = global.tracked_alloced_location_ids.contains(&dbg_ptr.provenance);
         // Step 2: Remove all items.  Also checks for protectors.
-        for item in self.borrows.drain(..).rev() {
         while let Some(item) = self.borrows.pop() {
             Stack::check_protector(&item, None, global, alloc_history)?;
-            if tracked_alloc {
-                register_diagnostic(NonHaltingDiagnostic::StackUpdate(self.clone(), StackUpdateType::Remove(item.tag)));
-            }
         }
 
         Ok(())
