@@ -846,10 +846,9 @@ trait EvalContextPrivExt<'mir, 'tcx: 'mir>: crate::MiriEvalContextExt<'mir, 'tcx
             }
             RefKind::Unique { two_phase: true} => Permission::TwoPhasedRW,
             RefKind::Unique { .. } => {
-                // Two-phase references and !Unpin references are treated as SharedReadWrite
-                Permission::SharedReadWrite
+                Permission::TwoPhasedRW
             }
-            RefKind::Raw { mutable: true } => Permission::SharedReadWrite,
+            RefKind::Raw { mutable: true } => Permission::TwoPhasedRW,
             RefKind::Shared | RefKind::Raw { mutable: false } => {
                 // Shared references and *const are a whole different kind of game, the
                 // permission is not uniform across the entire range!
@@ -866,7 +865,7 @@ trait EvalContextPrivExt<'mir, 'tcx: 'mir>: crate::MiriEvalContextExt<'mir, 'tcx
                     let perm = if frozen {
                         Permission::SharedReadOnly
                     } else {
-                        Permission::SharedReadWrite
+                        Permission::TwoPhasedRW
                     };
                     let item = Item { perm, tag: new_tag, protector };
                     let mut global = this.machine.stacked_borrows.as_ref().unwrap().borrow_mut();
