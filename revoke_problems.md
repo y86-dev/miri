@@ -20,6 +20,7 @@ points in time when testing.*
 - `quote` *all features* (`1fceb4a09d1692515a03059f47ffafa174704ead`)
 - `unicode-xid` *all features* (`23c1e7d1dc36ea87f78609591315542cb4b52f5a`)
 - `serde` *all features* (`2eed86cd67e2be73113ad138ea5eda77bade20d9`)
+- `smallvec` *all features* (`bb8idef466a36d78cccdb01dfe737e49078e5f349`)
 
 
 ## Found simple problems (just need to reorder buffer/slice `len()` calls) in the following crates:
@@ -27,6 +28,8 @@ points in time when testing.*
 	- `src/rng.rs:{355, 373}`
 - `getrandom` (`0.2.6`):
 	- `src/linux_android.rs:20`
+- `bytes` *all features* (`b8d27c016f53f0c1fea920223bc5a92f329d47df`)
+	- `src/buf/uninit_slice.rs:102`
 
 ## Weird errors
 - `proc-macro2` *all features* (`8649302c7ee649c601b93d4a1d6cfc55482f0d9b`) fails the `test_debug_tokenstream` test when running under custom miri *currently not investigated further*
